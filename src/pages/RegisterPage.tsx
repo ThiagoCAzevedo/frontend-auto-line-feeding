@@ -20,10 +20,44 @@ export default function RegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('Register attempt', formData);
-    navigate('/login');
+
+    if (formData.password !== formData.confirmPassword) {
+      alert("As senhas não coincidem.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:8010/user/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          confirm_password: formData.confirmPassword,
+
+        }),
+      });
+
+      console.log("Resposta da API:", response);
+
+      if (!response.ok) {
+        throw new Error("Erro ao criar usuário.");
+      }
+
+      alert("Cadastro realizado com sucesso!");
+
+      navigate("/login");
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao realizar cadastro. Tente novamente.");
+    }
   };
 
   return (
