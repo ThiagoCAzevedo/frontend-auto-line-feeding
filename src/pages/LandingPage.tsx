@@ -4,8 +4,8 @@ import { ThemeToggle } from '../components/ThemeToggle';
 
 import seseLogo from '../assets/sese_blue_logo.png';
 import heroBg from '../assets/hero_bg.jpg';
-import thiagoPhoto from '../assets/thiago.png';
-import nataPhoto from '../assets/nata.png';
+import thiagoPhoto from '../assets/crcld_thiago.png';
+import nataPhoto from '../assets/crlcd_nata.png';
 
 export default function LandingPage() {
   const navigate = useNavigate();
