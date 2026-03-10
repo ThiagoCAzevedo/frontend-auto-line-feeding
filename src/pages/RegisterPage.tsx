@@ -42,28 +42,27 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
   });
-  const [showPassword, setShowPassword]   = useState(false);
-  const [showConfirm, setShowConfirm]     = useState(false);
-  const [errors, setErrors]               = useState<FieldErrors>({});
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm]   = useState(false);
+  const [errors, setErrors]             = useState<FieldErrors>({});
+  const [apiError, setApiError]         = useState<string | null>(null);
+  const [success, setSuccess]           = useState(false);
+  const [isLoading, setIsLoading]       = useState(false);
 
   const strength = getPasswordStrength(formData.password);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    // Clear error on change
     setErrors((prev) => ({ ...prev, [name]: undefined }));
+    setApiError(null);
   };
 
   const validate = (): FieldErrors => {
     const errs: FieldErrors = {};
-
     if (!formData.firstName.trim()) errs.firstName = 'Nome é obrigatório.';
     if (!formData.lastName.trim())  errs.lastName  = 'Sobrenome é obrigatório.';
 
-    // Email
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email) {
       errs.email = 'Email é obrigatório.';
@@ -71,7 +70,6 @@ export default function RegisterPage() {
       errs.email = 'Insira um email válido (ex: nome@dominio.com).';
     }
 
-    // Password requirements
     if (!formData.password) {
       errs.password = 'Senha é obrigatória.';
     } else {
@@ -81,7 +79,6 @@ export default function RegisterPage() {
       }
     }
 
-    // Confirm password
     if (!formData.confirmPassword) {
       errs.confirmPassword = 'Confirmação de senha é obrigatória.';
     } else if (formData.password !== formData.confirmPassword) {
@@ -91,16 +88,43 @@ export default function RegisterPage() {
     return errs;
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setPasswordTouched(true);
+    setApiError(null);
+
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
-    console.log('Register attempt', formData);
-    navigate('/login');
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8003/user/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name:       formData.firstName,
+          last_name:        formData.lastName,
+          email:            formData.email,
+          password:         formData.password,
+          confirm_password: formData.confirmPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setApiError(data.detail ?? 'Erro ao realizar cadastro. Tente novamente.');
+        return;
+      }
+
+      setSuccess(true);
+    } catch {
+      setApiError('Não foi possível conectar ao servidor. Verifique sua conexão.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const inputClass = (field: keyof FieldErrors) =>
@@ -151,9 +175,7 @@ export default function RegisterPage() {
           from { opacity: 0; transform: translateX(-6px); }
           to   { opacity: 1; transform: translateX(0); }
         }
-        @keyframes bar-fill {
-          from { width: 0; }
-        }
+        @keyframes bar-fill { from { width: 0; } }
 
         .orb-1 { animation: orb-move-1 18s ease-in-out infinite; }
         .orb-2 { animation: orb-move-2 22s ease-in-out infinite; }
@@ -261,6 +283,29 @@ export default function RegisterPage() {
             <p className="text-gray-500 dark:text-gray-400">Preencha os dados abaixo para começar</p>
           </div>
 
+          {/* ── Success banner ── */}
+          {success && (
+            <div className="mb-5 flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+              <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                  Cadastro realizado com sucesso!
+                </p>
+                <p className="text-sm text-green-600 dark:text-green-500 mt-0.5">
+                  Entre em contato com um administrador para que sua conta seja aprovada antes de fazer login.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── API error banner ── */}
+          {apiError && (
+            <div className="mb-5 flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+              <XCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-600 dark:text-red-400">{apiError}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
 
             {/* Nome + Sobrenome */}
@@ -272,8 +317,7 @@ export default function RegisterPage() {
                     <User className="h-5 w-5 text-gray-400 group-focus-within:text-brand-primary transition-colors" />
                   </div>
                   <input type="text" name="firstName" value={formData.firstName} onChange={handleChange}
-                    className={inputClass('firstName')}
-                    placeholder="João" />
+                    className={inputClass('firstName')} placeholder="João" />
                 </div>
                 {errors.firstName && <FieldError message={errors.firstName} />}
               </div>
@@ -285,8 +329,7 @@ export default function RegisterPage() {
                     <User className="h-5 w-5 text-gray-400 group-focus-within:text-brand-primary transition-colors" />
                   </div>
                   <input type="text" name="lastName" value={formData.lastName} onChange={handleChange}
-                    className={inputClass('lastName')}
-                    placeholder="Silva" />
+                    className={inputClass('lastName')} placeholder="Silva" />
                 </div>
                 {errors.lastName && <FieldError message={errors.lastName} />}
               </div>
@@ -300,8 +343,7 @@ export default function RegisterPage() {
                   <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-brand-primary transition-colors" />
                 </div>
                 <input type="email" name="email" value={formData.email} onChange={handleChange}
-                  className={inputClass('email')}
-                  placeholder="seu@email.com" />
+                  className={inputClass('email')} placeholder="seu@email.com" />
               </div>
               {errors.email && <FieldError message={errors.email} />}
             </div>
@@ -318,7 +360,6 @@ export default function RegisterPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  
                   className={`${inputClass('password')} pr-12`}
                   placeholder="••••••••"
                 />
@@ -329,60 +370,46 @@ export default function RegisterPage() {
               </div>
               {errors.password && <FieldError message={errors.password} />}
 
-              {/* ── Password strength & requirements ── */}
               <div className="mt-3 space-y-3">
-                  {/* Strength bar */}
-                  <div className="space-y-1">
-                    <div className="flex gap-1.5">
-                      {[1, 2, 3, 4, 5].map((level) => (
+                <div className="space-y-1">
+                  <div className="flex gap-1.5">
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <div key={level} className="h-1.5 flex-1 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600">
                         <div
-                          key={level}
-                          className="h-1.5 flex-1 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600"
-                        >
-                          <div
-                            className="h-full rounded-full strength-bar transition-all duration-500"
-                            style={{
-                              width: strength >= level ? '100%' : '0%',
-                              backgroundColor: strength >= level ? STRENGTH_COLORS[strength] : 'transparent',
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    {formData.password && (
-                      <p className="text-xs font-medium transition-colors duration-300"
-                        style={{ color: STRENGTH_COLORS[strength] }}>
-                        Força da senha: {STRENGTH_LABELS[strength]}
-                      </p>
-                    )}
+                          className="h-full rounded-full strength-bar transition-all duration-500"
+                          style={{
+                            width: strength >= level ? '100%' : '0%',
+                            backgroundColor: strength >= level ? STRENGTH_COLORS[strength] : 'transparent',
+                          }}
+                        />
+                      </div>
+                    ))}
                   </div>
+                  {formData.password && (
+                    <p className="text-xs font-medium transition-colors duration-300"
+                      style={{ color: STRENGTH_COLORS[strength] }}>
+                      Força da senha: {STRENGTH_LABELS[strength]}
+                    </p>
+                  )}
+                </div>
 
-                  {/* Requirements checklist */}
-                  <div className="grid grid-cols-1 gap-1.5 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-600/50">
-                    {PASSWORD_REQUIREMENTS.map((req, i) => {
-                      const met = req.test(formData.password);
-                      return (
-                        <div
-                          key={i}
-                          className="req-item flex items-center gap-2"
-                          style={{ animationDelay: `${i * 0.05}s` }}
-                        >
-                          {met ? (
-                            <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-500" />
-                          ) : (
-                            <XCircle className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-500" />
-                          )}
-                          <span className={`text-xs transition-colors duration-200 ${
-                            met
-                              ? 'text-green-600 dark:text-green-400 font-medium'
-                              : 'text-gray-400 dark:text-gray-500'
-                          }`}>
-                            {req.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="grid grid-cols-1 gap-1.5 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-600/50">
+                  {PASSWORD_REQUIREMENTS.map((req, i) => {
+                    const met = req.test(formData.password);
+                    return (
+                      <div key={i} className="req-item flex items-center gap-2" style={{ animationDelay: `${i * 0.05}s` }}>
+                        {met
+                          ? <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-500" />
+                          : <XCircle className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-500" />}
+                        <span className={`text-xs transition-colors duration-200 ${
+                          met ? 'text-green-600 dark:text-green-400 font-medium' : 'text-gray-400 dark:text-gray-500'
+                        }`}>
+                          {req.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -411,9 +438,12 @@ export default function RegisterPage() {
 
             {/* Submit */}
             <div className="slide-in-7">
-              <button type="submit"
-                className="w-full py-3.5 px-4 bg-brand-primary hover:bg-brand-secondary text-white font-semibold rounded-xl shadow-lg hover:shadow-brand-primary/30 transform hover:-translate-y-0.5 transition-all duration-200 mt-2">
-                Realizar Cadastro
+              <button
+                type="submit"
+                disabled={isLoading || success}
+                className="w-full py-3.5 px-4 bg-brand-primary hover:bg-brand-secondary disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 text-white font-semibold rounded-xl shadow-lg hover:shadow-brand-primary/30 transform hover:-translate-y-0.5 transition-all duration-200 mt-2"
+              >
+                {isLoading ? 'Cadastrando...' : 'Realizar Cadastro'}
               </button>
             </div>
           </form>
@@ -433,7 +463,6 @@ export default function RegisterPage() {
   );
 }
 
-// ── Helper component ──
 function FieldError({ message }: { message: string }) {
   return (
     <p className="text-xs text-red-500 dark:text-red-400 mt-1 ml-1 flex items-center gap-1">
