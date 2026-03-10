@@ -10,10 +10,38 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt', { email, password });
-    navigate('/');
+
+    try {
+      // mudar api que recebe infos de login
+      const response = await fetch("http://localhost:3000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Credenciais inválidas");
+      }
+
+      const data = await response.json();
+
+      // exemplo: token retornado pela API
+      localStorage.setItem("token", data.token);
+
+      navigate("/");
+
+    } catch (err) {
+      console.error(err);
+      alert("Email ou senha incorretos.");
+    }
   };
 
   return (

@@ -4,8 +4,8 @@ import { ThemeToggle } from '../components/ThemeToggle';
 
 import seseLogo from '../assets/sese_blue_logo.png';
 import heroBg from '../assets/hero_bg.jpg';
-import thiagoPhoto from '../assets/thiago.png';
-import nataPhoto from '../assets/nata.png';
+import thiagoPhoto from '../assets/crcld_thiago.png';
+import nataPhoto from '../assets/crlcd_nata.png';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -108,14 +108,14 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-lg md:text-xl text-gray-200 max-w-[48ch] leading-relaxed mb-10">
-                O sistema CIAL revolucionou o atendimento automático da nossa linha de montagem,
+                O sistema CIAL vai revolucionar o modelo de atendimento de linha de montagem, automatizando o processo,
                 otimizando o fluxo de peças e garantindo a eficiência máxima em cada takt.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <button onClick={() => navigate('/register')}
                   className="px-7 py-4 bg-brand-primary hover:bg-brand-secondary text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-brand-primary/60 flex items-center justify-center group">
-                  Criar Conta Gratuita
+                  Criar Conta
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button onClick={() => scrollToSection('sobre')}
@@ -175,7 +175,7 @@ export default function LandingPage() {
               <ul className="space-y-4">
                 {[
                   'Cálculos matemáticos precisos em tempo real',
-                  'Monitoramento do takt time da linha',
+                  'Monitoramento das requisições atuais da linha',
                   'Gestão automática de consumo de peças',
                   'Solicitação inteligente de reabastecimento',
                 ].map((item, index) => (
